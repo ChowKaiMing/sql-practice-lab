@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQL Practice Lab — HKDSE ICT Elective A</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&f[]=jetbrains-mono@400,500,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./base.css" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo-area">
+        <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-label="SQL Practice Lab">
+          <rect x="2" y="6" width="28" height="20" rx="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M2 12h28" stroke="currentColor" stroke-width="2"/>
+          <circle cx="7" cy="9" r="1.5" fill="currentColor"/>
+          <circle cx="12" cy="9" r="1.5" fill="currentColor"/>
+          <circle cx="17" cy="9" r="1.5" fill="currentColor"/>
+          <path d="M8 18h6M8 22h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M20 17l2.5 2.5L20 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <h1 class="app-title">SQL Practice Lab</h1>
+          <span class="app-subtitle">HKDSE ICT Elective A — Databases</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" id="btnSave" title="Save database to browser">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+          Save
+        </button>
+        <button class="btn btn-outline" id="btnLoad" title="Load saved database">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Load
+        </button>
+        <button class="btn btn-primary" id="btnExport" title="Export as .db file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export .db
+        </button>
+        <button class="btn btn-outline btn-icon" id="btnImport" title="Import .db file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </button>
+        <input type="file" id="fileImport" accept=".db,.sqlite,.sqlite3" style="display:none" />
+        <button class="btn btn-icon" data-theme-toggle aria-label="Switch theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Top-level module navigation -->
+    <nav class="module-nav" id="moduleNav">
+      <button class="module-tab" data-module="concepts">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        1. Relational Database Concepts
+      </button>
+      <button class="module-tab" data-module="creating-db">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        2. Creating a Simple Relational Database
+      </button>
+      <button class="module-tab" data-module="rollback">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        3. Purposes of Rollback
+      </button>
+      <button class="module-tab" data-module="sql-syntax">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        4. SQL Syntax &amp; Functions
+      </button>
+      <button class="module-tab active" data-module="sql">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+        5. SQL Practice
+      </button>
+    </nav>
+  </header>
+
+  <!-- MODULE: SQL Practice -->
+  <main class="app-main module-view active" id="module-sql">
+
+    <!-- LEFT: SQL Reference Sidebar -->
+    <aside class="ref-sidebar" id="refSidebar">
+      <div class="ref-sidebar-header">
+        <span class="ref-sidebar-title">SQL Reference</span>
+        <button class="sidebar-toggle" id="refSidebarToggle" aria-label="Toggle reference">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+      </div>
+      <div class="ref-sidebar-body" id="refSidebarBody">
+        <!-- Populated by sql-reference.js -->
+      </div>
+    </aside>
+
+    <!-- CENTER: Editor + Results -->
+    <section class="editor-area">
+      <div class="editor-toolbar">
+        <div class="editor-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+          SQL Editor
+        </div>
+        <div class="editor-actions">
+          <button class="btn btn-sm btn-outline" id="btnClear" title="Clear editor">Clear</button>
+          <button class="btn btn-sm btn-primary" id="btnRun" title="Run SQL (Ctrl+Enter)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+            Run
+          </button>
+        </div>
+      </div>
+      <div class="editor-wrapper">
+        <textarea id="sqlEditor" class="sql-editor" spellcheck="false" placeholder="-- Type your SQL here...&#10;-- Press Ctrl+Enter to execute&#10;-- Try: SELECT * FROM Students;">SELECT * FROM Students;</textarea>
+        <div class="line-numbers" id="lineNumbers"></div>
+      </div>
+      <div class="results-area">
+        <div class="results-header">
+          <div class="results-tabs">
+            <button class="results-tab active" data-result="output">Output</button>
+            <button class="results-tab" data-result="history">History</button>
+          </div>
+          <span class="results-info" id="resultsInfo"></span>
+        </div>
+        <div class="results-panel active" id="result-output">
+          <div id="resultsContainer" class="results-container">
+            <div class="empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <p>Run a query to see results here</p>
+              <p class="text-muted text-sm">Use Ctrl+Enter or click Run</p>
+            </div>
+          </div>
+        </div>
+        <div class="results-panel" id="result-history">
+          <div id="historyContainer" class="history-container">
+            <div class="empty-state"><p class="text-muted">No queries executed yet</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Concepts / Tables / Exercises panel -->
+    <aside class="right-panel" id="rightPanel">
+      <nav class="right-panel-nav">
+        <button class="right-tab active" data-rpanel="concepts">Concepts</button>
+        <button class="right-tab" data-rpanel="tables">Tables</button>
+        <button class="right-tab" data-rpanel="exercises">Exercises</button>
+      </nav>
+      <div class="right-panel-body">
+        <div class="rpanel active" id="rpanel-concepts">
+          <!-- Populated by sql-reference.js -->
+        </div>
+        <div class="rpanel" id="rpanel-tables">
+          <div class="tables-header">
+            <span class="section-label">Database Tables</span>
+            <button class="btn btn-sm btn-outline" id="btnRefreshTables">Refresh</button>
+          </div>
+          <div class="db-actions">
+            <button class="btn btn-sm btn-outline" id="btnShowDDL" title="Show CREATE TABLE statements">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+              DDL
+            </button>
+            <button class="btn btn-sm btn-outline" id="btnShowDML" title="Show INSERT statements for all data">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+              DML
+            </button>
+            <button class="btn btn-sm btn-primary" id="btnViewAll" title="View all table data in output">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+              View All
+            </button>
+          </div>
+          <div id="tablesList" class="tables-list">
+            <p class="text-muted">Loading...</p>
+          </div>
+        </div>
+        <div class="rpanel" id="rpanel-exercises">
+          <div class="exercises-list" id="exercisesList"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- MODULE: Relational Database Concepts -->
+  <main class="app-main module-view" id="module-concepts">
+    <aside class="concepts-sidebar" id="conceptsSidebar">
+      <nav class="concepts-nav" id="conceptsNav">
+        <!-- Populated by concepts.js -->
+      </nav>
+    </aside>
+    <section class="concepts-main">
+      <div class="concepts-content" id="conceptsContent">
+        <!-- Populated by concepts.js -->
+      </div>
+    </section>
+  </main>
+
+  <!-- MODULE: Creating a Simple Relational Database -->
+  <main class="app-main module-view" id="module-creating-db">
+    <aside class="concepts-sidebar" id="creatingDbSidebar">
+      <nav class="concepts-nav" id="creatingDbNav">
+        <!-- Populated by creating-db.js -->
+      </nav>
+    </aside>
+    <section class="concepts-main">
+      <div class="concepts-content" id="creatingDbContent">
+        <!-- Populated by creating-db.js -->
+      </div>
+    </section>
+  </main>
+
+  <!-- MODULE: SQL Syntax & Functions -->
+  <main class="app-main module-view" id="module-sql-syntax">
+    <aside class="concepts-sidebar" id="sqlSyntaxSidebar">
+      <nav class="concepts-nav" id="sqlSyntaxNav"></nav>
+    </aside>
+    <section class="concepts-main">
+      <div class="concepts-content" id="sqlSyntaxContent"></div>
+    </section>
+  </main>
+
+  <!-- MODULE: Purposes of Rollback -->
+  <main class="app-main module-view" id="module-rollback">
+    <aside class="concepts-sidebar" id="rollbackSidebar">
+      <nav class="concepts-nav" id="rollbackNav">
+        <!-- Populated by rollback.js -->
+      </nav>
+    </aside>
+    <section class="concepts-main">
+      <div class="concepts-content" id="rollbackContent">
+        <!-- Populated by rollback.js -->
+      </div>
+    </section>
+  </main>
+
+  <!-- SQL Reference Popup (shared popover) -->
+  <div class="ref-popup-overlay" id="refPopupOverlay"></div>
+  <div class="ref-popup" id="refPopup">
+    <div class="ref-popup-header">
+      <h3 class="ref-popup-title" id="refPopupTitle"></h3>
+      <button class="ref-popup-close" id="refPopupClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="ref-popup-body" id="refPopupBody"></div>
+    <div class="ref-popup-footer">
+      <button class="btn btn-primary btn-sm" id="refPopupTry">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        Try this SQL
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Reset DB Modal -->
+  <dialog id="resetModal" class="modal">
+    <div class="modal-content">
+      <h3>Reset Database</h3>
+      <p>This will reset the database to its original sample data. All your changes will be lost.</p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="btnCancelReset">Cancel</button>
+        <button class="btn btn-warning" id="btnConfirmReset">Reset</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Insert Record Modal -->
+  <dialog id="insertModal" class="modal insert-modal">
+    <div class="modal-content insert-modal-content">
+      <div class="insert-modal-header">
+        <h3 id="insertModalTitle">Insert Record</h3>
+        <button class="btn btn-icon insert-modal-close" onclick="document.getElementById('insertModal').close()" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="insertFormFields" class="insert-form-fields"></div>
+      <div id="insertError" class="insert-error" style="display:none"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="document.getElementById('insertModal').close()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitInsertForm()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Insert Row
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <footer class="app-footer">
+    <span>HKDSE ICT Elective A — SQL Practice Lab</span>
+    <button class="btn btn-sm btn-outline" id="btnResetDB">Reset Sample Data</button>
+  </footer>
+
+  <script src="./app.js"></script>
+  <script src="./sql-reference.js"></script>
+  <script src="./concepts.js"></script>
+  <script src="./creating-db.js"></script>
+  <script src="./rollback.js"></script>
+  <script src="./sql-syntax.js"></script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
