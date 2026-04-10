@@ -1,22 +1,38 @@
 /* ===== SQL Practice Lab — HKDSE ICT Elective A ===== */
 
 let db = null;
+let SQL = null;
 let queryHistory = [];
 let savedDBKey = 'sql_practice_lab_db';
 
 // ===== INITIALIZATION =====
 async function initApp() {
   try {
-    const SQL = await initSqlJs({
+    SQL = await initSqlJs({
       locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
     });
     db = new SQL.Database();
-    loadSampleData();
+
+    // Auto-load from localStorage if a saved database exists
+    const savedJson = localStorage.getItem(savedDBKey);
+    if (savedJson) {
+      try {
+        const arr = new Uint8Array(JSON.parse(savedJson));
+        db = new SQL.Database(arr);
+        showToast('Saved database restored', 'success');
+      } catch {
+        loadSampleData();
+        showToast('Database ready with sample data', 'success');
+      }
+    } else {
+      loadSampleData();
+      showToast('Database ready with sample data', 'success');
+    }
+
     refreshTables();
     setupEventListeners();
     updateLineNumbers();
     setupExercises();
-    showToast('Database ready with sample data', 'success');
   } catch (err) {
     showToast('Failed to initialize SQL engine: ' + err.message, 'error');
   }
@@ -517,9 +533,15 @@ function saveDatabase() {
     const data = db.export();
     const arr = Array.from(data);
     const json = JSON.stringify(arr);
-    // Use a global variable as localStorage is not available in sandboxed iframes
+    // Save to both global variable (for quick access) and localStorage (for persistence)
     window.__savedDB = json;
     window.__savedDBTimestamp = new Date().toISOString();
+    try {
+      localStorage.setItem(savedDBKey, json);
+      localStorage.setItem(savedDBKey + '_ts', window.__savedDBTimestamp);
+    } catch (e) {
+      // localStorage may be unavailable (e.g. private browsing restrictions)
+    }
     showToast('Database saved successfully', 'success');
   } catch (err) {
     showToast('Save failed: ' + err.message, 'error');
@@ -528,16 +550,26 @@ function saveDatabase() {
 
 function loadDatabase() {
   try {
-    if (!window.__savedDB) {
+    let savedJson = window.__savedDB;
+    let timestamp = window.__savedDBTimestamp;
+    if (!savedJson) {
+      // Fallback to localStorage
+      savedJson = localStorage.getItem(savedDBKey);
+      timestamp = localStorage.getItem(savedDBKey + '_ts');
+    }
+    if (!savedJson) {
       showToast('No saved database found. Save one first.', 'info');
       return;
     }
-    const arr = new Uint8Array(JSON.parse(window.__savedDB));
-    const SQL = db.constructor;
+    if (!SQL) {
+      showToast('SQL engine not ready. Please refresh the page.', 'error');
+      return;
+    }
+    const arr = new Uint8Array(JSON.parse(savedJson));
     db.close();
     db = new SQL.Database(arr);
     refreshTables();
-    showToast('Database loaded from save (' + (window.__savedDBTimestamp || 'unknown time') + ')', 'success');
+    showToast('Database loaded from save (' + (timestamp || 'unknown time') + ')', 'success');
   } catch (err) {
     showToast('Load failed: ' + err.message, 'error');
   }
@@ -566,7 +598,10 @@ function importDatabase(file) {
   reader.onload = function(e) {
     try {
       const arr = new Uint8Array(e.target.result);
-      const SQL = db.constructor;
+      if (!SQL) {
+        showToast('SQL engine not ready. Please refresh the page.', 'error');
+        return;
+      }
       db.close();
       db = new SQL.Database(arr);
       refreshTables();
@@ -642,7 +677,10 @@ function setupEventListeners() {
   // Reset
   btnResetDB.addEventListener('click', () => resetModal.showModal());
   btnConfirmReset.addEventListener('click', () => {
-    const SQL = db.constructor;
+    if (!SQL) {
+      showToast('SQL engine not ready. Please refresh the page.', 'error');
+      return;
+    }
     db.close();
     db = new SQL.Database();
     loadSampleData();
@@ -696,6 +734,37 @@ function setupEventListeners() {
 
   // Module navigation
   setupModuleNav();
+
+  // Editor vertical resize handle
+  const resizeHandle = document.getElementById('editorResizeHandle');
+  const editorWrapper = document.querySelector('.editor-wrapper');
+  let isResizing = false;
+  let startY = 0;
+  let startHeight = 0;
+
+  resizeHandle.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    startY = e.clientY;
+    startHeight = editorWrapper.offsetHeight;
+    resizeHandle.classList.add('dragging');
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    const delta = e.clientY - startY;
+    const newHeight = Math.max(120, Math.min(startHeight + delta, 600));
+    editorWrapper.style.height = newHeight + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isResizing) return;
+    isResizing = false;
+    resizeHandle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
 }
 
 // ===== THEME TOGGLE =====
