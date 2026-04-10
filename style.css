@@ -726,11 +726,12 @@ body {
 
 /* ===== INSERT MODAL ===== */
 .insert-modal-content {
-  width: 480px;
-  max-width: 92vw;
+  width: min(480px, 90vw);
+  max-width: 100%;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .insert-modal-header {
@@ -901,6 +902,24 @@ body {
   min-height: 120px;
   background: var(--color-editor-bg);
   overflow: hidden;
+}
+
+.editor-resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  background: transparent;
+  z-index: 10;
+  transition: background var(--transition-interactive);
+}
+
+.editor-resize-handle:hover,
+.editor-resize-handle.dragging {
+  background: var(--color-primary);
+  opacity: 0.5;
 }
 
 .sql-editor {
@@ -1174,7 +1193,9 @@ body {
   padding: var(--space-6);
   background: var(--color-surface);
   box-shadow: var(--shadow-lg);
-  max-width: 400px;
+  max-width: min(400px, 90vw);
+  width: 100%;
+  margin: auto;
   color: var(--color-text);
 }
 
